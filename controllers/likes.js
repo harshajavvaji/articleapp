@@ -20,8 +20,36 @@ const postArticle = async (req, res) => {
 const incrementLike = async (req, res) => {
     try {
         const { id } = req.params
-        const likeCount = Article.findByIdAndUpdate(id, {$inc: { likes : 1 }}, {new: true})
-        res.status(200).json(likeCount.toObject());
+        const updatedArticle = await Article.findByIdAndUpdate(id, {$inc: { likes : 1 }}, {new: true})
+        res.status(200).json({updatedArticle});
+    } catch (error) {
+        console.log(error)
+    }
+}
+
+
+const decrementLike = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updatedArticle = await Article.findByIdAndUpdate(
+            id,
+            {$inc : { likes : -1 }} , {new : true}
+        );
+        return res.status(200).json({updatedArticle})
+
+    } catch (error) {
+        console.log(error)
+    }
+}
+
+const updateArticle = async (req, res) => {
+    try {
+        const { name, description, image } = req.body;
+        const { id } = req.params;
+        const updatedarticle = await Article.findByIdAndUpdate(id,
+            {name, description, image }, {new : true}
+        )
+        return res.status(200).json({updatedarticle})
     } catch (error) {
         console.log(error)
     }
@@ -68,4 +96,4 @@ const getArticleById = async (req, res) => {
 }
 
 
-module.exports = {getArticles, getArticleById, deleteArticle, postArticle, deleteAll, incrementLike };
+module.exports = {getArticles, getArticleById, deleteArticle, postArticle, deleteAll, incrementLike, decrementLike, updateArticle };
