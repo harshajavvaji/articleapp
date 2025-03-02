@@ -1,6 +1,7 @@
 const express = require("express");
 
-const { getArticles, getArticleById, deleteArticle, postArticle, deleteAll, incrementLike, decrementLike, updateArticle, register,updateUser, deleteUser, getUserById, getAllUsers } = require('../controllers/likes')
+const { getArticles, getArticleById, deleteArticle, postArticle, deleteAll, updateLike, updateArticle, register,updateUser, deleteUser, getUserById, getAllUsers, login } = require('../controllers/likes');
+const checkUser = require("../middleware/checkUser");
 
 const router = express.Router();
 
@@ -9,8 +10,7 @@ router.get('/getarticle/:id', getArticleById);
 router.delete('/deletearticle/:id', deleteArticle);
 router.post('/addArticle', postArticle);
 router.delete('/deleteall', deleteAll)
-router.put('/like/:id', incrementLike)
-router.put('/dislike/:id', decrementLike);
+router.put('/updatelike/:id', checkUser, updateLike);
 router.put('/updateArticle/:id', updateArticle);
 
 
@@ -19,7 +19,8 @@ router.post('/register', register)
 router.put('/update/:id', updateUser)
 router.delete('/deleteuser/:id', deleteUser)
 router.delete('/deleteall', deleteAll)
-router.get('/get/:id', getUserById)
+router.get('/get/:id', checkUser, getUserById)
 router.get('/getall', getAllUsers)
+router.post('/login', login)
 
 module.exports = router;

@@ -1,9 +1,11 @@
 const { Article, User } = require('../schema/schema')
 // const mongoose = require("mongoose");
+const jwt = require('jsonwebtoken');
 
 // const User = require('../schema/schema')
 const bcrypt = require('bcrypt')
 
+const key = 'ARRJAHHEBBVAKBVANEQWERTYUIOKASDFGHJKZXCVBNMSDFGHJWERTYUASDFGHJKZXCVBNM'
 const register = async (req, res) => {
     try {
     const { name, email, password} = req.body;
@@ -24,13 +26,34 @@ const register = async (req, res) => {
         password: hashedPassword
     });
 
-    await newUser.save();
-    return res.status(200).json({message: 'User created sucessfully'})
+    const  addedUser = await newUser.save();
+    const token = jwt.sign({userId : addedUser._id}, key);
+    return res.status(200).json({message: 'User created sucessfully', addedUser, token})
     } catch (error) {
         console.log(error)
     }
 }
 
+const login = async (req, res) => {
+    try {
+        const { email, password} = req.body;
+        const existingUser = await User.findOne({email})
+    
+        if(!existingUser){
+            return res.status(200).json({message: 'User not exists, Register and try'})
+        }
+        // existingUser.password
+        const status = bcrypt.compare(password, existingUser.password);
+        if(!status){
+            return res.status(200).json({message: 'Invalid Credentials'})
+        }
+
+        const token = jwt.sign({ userId: existingUser._id}, key);
+        return res.status(200).json({message: 'Login successfully',  existingUser, token},);
+        } catch (error) {
+            console.log(error)
+        }
+}
 const updateUser = async (req, res) => {
     try {
         const { id } = req.params;
@@ -85,6 +108,9 @@ const deleteUser = async (req, res) => {
 const getUserById = async (req, res) => {
     try {
         const { id } = req.params;
+        if(req.user._id != id){
+            return res.status(400).json({error: "Not Authorized"})
+        }
         const user = await User.findById(id)
         res.status(200).send(user);
     } catch (error) {
@@ -117,30 +143,61 @@ const postArticle = async (req, res) => {
     }
 }
 
-const incrementLike = async (req, res) => {
-    try {
-        const { id } = req.params
-        const updatedArticle = await Article.findByIdAndUpdate(id, {$inc: { likes : 1 }}, {new: true})
-        res.status(200).json({updatedArticle});
-    } catch (error) {
-        console.log(error)
-    }
-}
-
-
-const decrementLike = async (req, res) => {
+const updateLike = async (req, res) => {
     try {
         const { id } = req.params;
-        const updatedArticle = await Article.findByIdAndUpdate(
-            id,
-            {$inc : { likes : -1 }} , {new : true}
-        );
-        return res.status(200).json({updatedArticle})
+        const likedArticles = req.user.likedArticleIds;
+        // console.log(req.user)
+        if(likedArticles.indexOf(id) != -1 ){
+            const updatedArticle = await Article.findByIdAndUpdate(
+                id,
+                {$inc : { likes : -1 }} , {new : true}
+            );
+            const updatedLikedArticles = likedArticles.filter(likedId => likedId !== id);
+            const updatedUser = await User.findByIdAndUpdate(req.user._id,
+                { likedArticleIds: updatedLikedArticles }, {new : true}
+            )
+            req.user = updatedUser;
+            return res.status(200).json({updatedUser})
+        }else{
+            console.log("123456789", id)
+            const updatedArticle = await Article.findByIdAndUpdate(id, {$inc: { likes : 1 }}, {new: true})
+            const updatedUser = await User.findByIdAndUpdate(
+                req.user._id,
+                {
+                  $set: { likedArticleIds : [ ...req.user.likedArticleIds, id] },
+                },
+                { new: true});
+            // const updatedLikedArticles = likedArticles.push(id);
+            // console.log("123456789", updatedLikedArticles)
+            req.user = updatedUser;
+            return res.status(200).json({updatedUser})
 
+        }
+
+
+        
     } catch (error) {
         console.log(error)
     }
 }
+
+// jwt and decode it and get user  id and add it to  the list
+
+
+// const decrementLike = async (req, res) => {
+//     try {
+//         const { id } = req.params;
+//         const updatedArticle = await Article.findByIdAndUpdate(
+//             id,
+//             {$inc : { likes : -1 }} , {new : true}
+//         );
+//         return res.status(200).json({updatedArticle})
+
+//     } catch (error) {
+//         console.log(error)
+//     }
+// }
 
 const updateArticle = async (req, res) => {
     try {
@@ -196,4 +253,4 @@ const getArticleById = async (req, res) => {
 }
 
 
-module.exports = {getArticles, getArticleById, deleteArticle, postArticle, incrementLike, decrementLike, updateArticle, register, updateUser, deleteUser, deleteAll, getUserById, getAllUsers };
+module.exports = {getArticles, getArticleById, deleteArticle, postArticle, updateLike, updateArticle, register, updateUser, deleteUser, deleteAll, getUserById, getAllUsers, login };
