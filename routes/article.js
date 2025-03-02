@@ -1,6 +1,6 @@
 const express = require("express");
 
-const { getArticles, getArticleById, deleteArticle, postArticle, deleteAll, incrementLike, decrementLike, updateArticle } = require('../controllers/likes')
+const { getArticles, getArticleById, deleteArticle, postArticle, deleteAll, incrementLike, decrementLike, updateArticle, register,updateUser, deleteUser, getUserById, getAllUsers } = require('../controllers/likes')
 
 const router = express.Router();
 
@@ -13,5 +13,13 @@ router.put('/like/:id', incrementLike)
 router.put('/dislike/:id', decrementLike);
 router.put('/updateArticle/:id', updateArticle);
 
+
+// user routes
+router.post('/register', register)
+router.put('/update/:id', updateUser)
+router.delete('/deleteuser/:id', deleteUser)
+router.delete('/deleteall', deleteAll)
+router.get('/get/:id', getUserById)
+router.get('/getall', getAllUsers)
 
 module.exports = router;

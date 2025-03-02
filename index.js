@@ -15,6 +15,7 @@ app.use(bodyparser.json({ extended: true }));
 app.use(bodyparser.urlencoded({ extended: true }));
 
 app.use('/api/article', require('./routes/article') )
+app.use('/api/user', require('./routes/article'))
 
 app.get('/', (req, res) => {
   res.send('Hello World!')

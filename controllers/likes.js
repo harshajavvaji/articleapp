@@ -1,5 +1,105 @@
-const Article = require('../schema/schema')
+const { Article, User } = require('../schema/schema')
 // const mongoose = require("mongoose");
+
+// const User = require('../schema/schema')
+const bcrypt = require('bcrypt')
+
+const register = async (req, res) => {
+    try {
+    const { name, email, password} = req.body;
+    const existingUser = await User.findOne({email})
+
+    if(existingUser){
+        return res.status(200).json({message: 'User already exists'})
+    }
+
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt)
+
+    // create new user
+    const newUser = new User({
+        name,
+        email,
+        password: hashedPassword
+    });
+
+    await newUser.save();
+    return res.status(200).json({message: 'User created sucessfully'})
+    } catch (error) {
+        console.log(error)
+    }
+}
+
+const updateUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, email, password } = req.body;
+        updatedFields = {};
+        if(name) updatedFields.name = name;
+        if(email) updatedFields.email = email
+        if(password) {
+            const salt = await bcrypt.genSalt(10);
+            updatedFields.password = await bcrypt.hash(password, salt);
+        }
+        const updated = await User.findByIdAndUpdate(
+            id,
+            updatedFields,
+            {
+            new: true, runValidators: true
+            }
+    )
+
+    if(!updated){
+        return res.status(404).json({message: "User not found"})
+    }
+        return res.status(200).json(updated)
+
+    } catch (error) {
+        console.log(error)
+    }
+}
+
+const deleteUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const toBeDeletedUser = await User.findByIdAndDelete(
+            id
+        ) 
+        res.status(200).send();
+    } catch (error) {
+        console.log(error)
+    }
+}
+
+// const deleteAllUsers = async (req, res) => {
+//     try {
+//         const deleteall = await User.deleteMany({});
+//         res.status(200).send('deleted all users')
+//     } catch (error) {
+//         console.log(error)
+//     }
+// }
+
+
+const getUserById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await User.findById(id)
+        res.status(200).send(user);
+    } catch (error) {
+        console.log(error)
+    }
+}
+
+const getAllUsers = async (req, res) => {
+    try {
+        const allUsers = await User.find()
+        res.status(200).send(allUsers);        
+    } catch (error) {
+        console.log(error)
+    }
+}
 
 
 const postArticle = async (req, res) => {
@@ -96,4 +196,4 @@ const getArticleById = async (req, res) => {
 }
 
 
-module.exports = {getArticles, getArticleById, deleteArticle, postArticle, deleteAll, incrementLike, decrementLike, updateArticle };
+module.exports = {getArticles, getArticleById, deleteArticle, postArticle, incrementLike, decrementLike, updateArticle, register, updateUser, deleteUser, deleteAll, getUserById, getAllUsers };
